@@ -260,8 +260,12 @@ func GlobalAuth(auth AuthScheme) {
 	globalAuth = auth
 }
 
-// GlobalConfig sets default configuration for all requests.
+// GlobalConfig sets the default configuration for all requests.
+// Passing nil resets to DefaultConfig().
 func GlobalConfig(cfg *Config) {
+	if cfg == nil {
+		cfg = DefaultConfig()
+	}
 	globalMu.Lock()
 	defer globalMu.Unlock()
 	globalConfig = cfg

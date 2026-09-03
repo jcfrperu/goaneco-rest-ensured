@@ -45,8 +45,13 @@ func NewTestServer() *httptest.Server {
 	// -------------------------------------------------------------------------
 
 	writeJSON := func(w http.ResponseWriter, v any) {
+		data, err := json.Marshal(v)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(v)
+		_, _ = w.Write(data)
 	}
 
 	writeXML := func(w http.ResponseWriter, xml string) {

@@ -477,11 +477,14 @@ func (r *Request) Options(path string, pathParams ...any) *Response {
 
 // Execute builds the final URL, serializes the body, runs the filter chain in order,
 // dispatches the HTTP request, and returns the *Response. It is the central entry point
-// called by all method shortcuts (Get, Post, Put, etc.). The Request itself is not
-// mutated, so Execute can be called multiple times with identical results.
+// called by all method shortcuts (Get, Post, Put, etc.).
+// Note: if Timeout() was used, the context is cancelled when Execute returns and the
+// Request should not be reused for subsequent calls without calling Timeout() again.
 func (r *Request) Execute(method Method, path string, positionalParams ...any) *Response {
-	if r.ctxCancel != nil {
-		defer r.ctxCancel()
+	cancel := r.ctxCancel
+	r.ctxCancel = nil
+	if cancel != nil {
+		defer cancel()
 	}
 	if r.buildErr != nil {
 		return &Response{err: fmt.Errorf("%w: %v", ErrRequestFailed, r.buildErr)}
@@ -566,7 +569,7 @@ func (r *Request) Execute(method Method, path string, positionalParams ...any) *
 // r.params are routed to query params for GET/DELETE/HEAD/OPTIONS and to form params
 // for POST/PUT/PATCH. Empty values are dropped when EmptyParamsBehavior is "omit".
 func (r *Request) effectiveParams(method string) (query url.Values, form url.Values) {
-	paramBehavior := "include"
+	paramBehavior := EmptyParamsInclude
 	if r.config != nil {
 		paramBehavior = r.config.ParamConfig().EmptyParamsBehavior
 	}
@@ -803,7 +806,7 @@ func (r *Request) prepareBody(method string, effectiveForm url.Values) ([]byte, 
 
 	isFormMethod := method == "POST" || method == "PUT" || method == "PATCH"
 	if len(effectiveForm) > 0 && isFormMethod {
-		if r.config != nil && r.config.ParamConfig().EmptyParamsBehavior == "error" {
+		if r.config != nil && r.config.ParamConfig().EmptyParamsBehavior == EmptyParamsError {
 			for k, vs := range effectiveForm {
 				for _, v := range vs {
 					if v == "" {
@@ -855,7 +858,7 @@ func (r *Request) buildURL(path string, effectiveQuery url.Values, positionalPar
 
 	// Combine basePath and path
 	basePath := strings.Trim(r.substitutePathParams(r.basePath), "/")
-	cleanPath := strings.TrimLeft(substitutedPath, "/")
+	cleanPath := strings.TrimPrefix(substitutedPath, "/")
 
 	var fullPathParts []string
 	if u.Path != "" && u.Path != "/" {
@@ -946,10 +949,10 @@ func (r *Request) appendQueryParams(rawURL string, queryParams url.Values) (stri
 			for k, values := range queryParams {
 				for _, v := range values {
 					if v == "" {
-						if paramBehavior == "omit" {
+						if paramBehavior == EmptyParamsOmit {
 							continue
 						}
-						if paramBehavior == "error" {
+						if paramBehavior == EmptyParamsError {
 							return "", fmt.Errorf("empty parameter %q is not allowed by ParamConfig", k)
 						}
 					}
@@ -967,10 +970,10 @@ func (r *Request) appendQueryParams(rawURL string, queryParams url.Values) (stri
 			for k, values := range queryParams {
 				for _, v := range values {
 					if v == "" {
-						if paramBehavior == "omit" {
+						if paramBehavior == EmptyParamsOmit {
 							continue
 						}
-						if paramBehavior == "error" {
+						if paramBehavior == EmptyParamsError {
 							return "", fmt.Errorf("empty parameter %q is not allowed by ParamConfig", k)
 						}
 					}
@@ -1005,12 +1008,15 @@ func decompressResponse(data []byte, encoding string, cfg DecoderConfig) ([]byte
 			return data, nil
 		}
 		decompressed, err := io.ReadAll(gr)
-		_ = gr.Close()
+		closeErr := gr.Close()
 		if err != nil {
 			if isGzipEncoded {
 				return nil, fmt.Errorf("reading gzip response body: %w", err)
 			}
 			return data, nil
+		}
+		if closeErr != nil && isGzipEncoded {
+			return nil, fmt.Errorf("gzip checksum validation failed: %w", closeErr)
 		}
 		return decompressed, nil
 	}

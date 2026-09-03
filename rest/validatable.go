@@ -562,15 +562,6 @@ func (v *ValidatableResponse) Body(path string, expected any) *ValidatableRespon
 
 	result := evalGjsonPath(v.response.body, fullPath)
 	if !result.Exists() {
-		if expected != nil {
-			if matched, _, isMatcher := matchesExpected(nil, expected); isMatcher {
-				if !matched {
-					v.recordFailure(fmt.Sprintf("path %q does not exist in response body", fullPath))
-				}
-				return v
-			}
-		}
-		// Path doesn't exist — fail regardless of expected (nil means "field is null", not "field absent")
 		v.recordFailure(fmt.Sprintf("path %q does not exist in response body", fullPath))
 		return v
 	}

@@ -153,9 +153,18 @@ type FailureConfig struct {
 	Listeners []func(req *http.Request, resp *Response, failures []string)
 }
 
+// EmptyParamsBehavior controls how empty query/form parameter values are handled.
+type EmptyParamsBehavior string
+
+const (
+	EmptyParamsInclude EmptyParamsBehavior = "include" // default: send empty values
+	EmptyParamsOmit    EmptyParamsBehavior = "omit"    // drop parameters with empty values
+	EmptyParamsError   EmptyParamsBehavior = "error"   // return error if any value is empty
+)
+
 // ParamConfig configures query and form parameter behaviors.
 type ParamConfig struct {
-	EmptyParamsBehavior string // "include" (default) | "omit" | "error"
+	EmptyParamsBehavior EmptyParamsBehavior
 }
 
 // transportCache holds a lazily initialized *http.Transport shared across request instances
@@ -232,7 +241,7 @@ func DefaultConfig() *Config {
 			Listeners: make([]func(req *http.Request, resp *Response, failures []string), 0),
 		},
 		paramConfig: ParamConfig{
-			EmptyParamsBehavior: "include",
+			EmptyParamsBehavior: EmptyParamsInclude,
 		},
 		csrfConfig: CsrfConfig{
 			TokenField: "_csrf",

@@ -162,26 +162,42 @@ func (m *anyNumericMatcher) DescribeMismatch(actual any) string {
 }
 
 // GreaterThanNum creates an AnyMatcher for numeric comparisons (coercing JSON numbers).
+// Panics if threshold is not a numeric type.
 func GreaterThanNum(threshold any) AnyMatcher {
-	th, _ := toFloat64(threshold)
+	th, ok := toFloat64(threshold)
+	if !ok {
+		panic(fmt.Sprintf("matcher: GreaterThanNum requires a numeric threshold, got %T", threshold))
+	}
 	return &anyNumericMatcher{threshold: th, operator: ">"}
 }
 
 // GreaterThanOrEqualToNum creates an AnyMatcher for numeric comparisons.
+// Panics if threshold is not a numeric type.
 func GreaterThanOrEqualToNum(threshold any) AnyMatcher {
-	th, _ := toFloat64(threshold)
+	th, ok := toFloat64(threshold)
+	if !ok {
+		panic(fmt.Sprintf("matcher: GreaterThanOrEqualToNum requires a numeric threshold, got %T", threshold))
+	}
 	return &anyNumericMatcher{threshold: th, operator: ">="}
 }
 
 // LessThanNum creates an AnyMatcher for numeric comparisons.
+// Panics if threshold is not a numeric type.
 func LessThanNum(threshold any) AnyMatcher {
-	th, _ := toFloat64(threshold)
+	th, ok := toFloat64(threshold)
+	if !ok {
+		panic(fmt.Sprintf("matcher: LessThanNum requires a numeric threshold, got %T", threshold))
+	}
 	return &anyNumericMatcher{threshold: th, operator: "<"}
 }
 
 // LessThanOrEqualToNum creates an AnyMatcher for numeric comparisons.
+// Panics if threshold is not a numeric type.
 func LessThanOrEqualToNum(threshold any) AnyMatcher {
-	th, _ := toFloat64(threshold)
+	th, ok := toFloat64(threshold)
+	if !ok {
+		panic(fmt.Sprintf("matcher: LessThanOrEqualToNum requires a numeric threshold, got %T", threshold))
+	}
 	return &anyNumericMatcher{threshold: th, operator: "<="}
 }
 

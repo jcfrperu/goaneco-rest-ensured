@@ -59,7 +59,7 @@ func TestConfig_DeepCopyAndImmutability(t *testing.T) {
 	is.True(cfg5.SSLConfig().InsecureSkipVerify)
 	is.False(cfg5.RedirectConfig().Follow)
 	is.Equal(3, cfg5.RedirectConfig().MaxCount)
-	is.Equal("omit", cfg5.ParamConfig().EmptyParamsBehavior)
+	is.Equal(rest.EmptyParamsOmit, cfg5.ParamConfig().EmptyParamsBehavior)
 	is.Equal("custom_csrf", cfg5.CsrfConfig().TokenField)
 	is.Equal("MY_SESS", cfg5.SessionConfig().SessionName)
 
@@ -555,7 +555,7 @@ func TestConfig_NilConfigSafety(t *testing.T) {
 	is.Equal("UTF-8", nilCfg.DecoderConfig().DefaultCharset)
 	is.True(nilCfg.RedirectConfig().Follow)
 	is.Empty(nilCfg.FailureConfig().Listeners)
-	is.Equal("include", nilCfg.ParamConfig().EmptyParamsBehavior)
+	is.Equal(rest.EmptyParamsInclude, nilCfg.ParamConfig().EmptyParamsBehavior)
 	is.Equal("_csrf", nilCfg.CsrfConfig().TokenField)
 	is.Equal("JSESSIONID", nilCfg.SessionConfig().SessionName)
 

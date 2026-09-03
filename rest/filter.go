@@ -386,9 +386,10 @@ func (cf *CsrfFilter) Filter(req *FilterableRequest, ctx *FilterContext) (*Respo
 	// Double-checked locking: the RLock fast-path avoids contention once the token
 	// is cached; the WLock re-check prevents duplicate fetches under concurrency.
 	if token == "" && csrfURI != "" {
+		fetched := cf.fetchCSRFToken(req, csrfURI, field)
 		cf.mu.Lock()
 		if cf.token == "" {
-			cf.token = cf.fetchCSRFToken(req, csrfURI, field)
+			cf.token = fetched
 		}
 		token = cf.token
 		cf.mu.Unlock()

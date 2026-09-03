@@ -18,7 +18,10 @@ func AllOf[T any](matchers ...Matcher[T]) Matcher[T] {
 
 func (m *allOfMatcher[T]) Matches(actual T) bool {
 	for _, matcher := range m.matchers {
-		if matcher != nil && !matcher.Matches(actual) {
+		if matcher == nil {
+			panic("matcher: AllOf received a nil Matcher")
+		}
+		if !matcher.Matches(actual) {
 			return false
 		}
 	}
@@ -28,16 +31,20 @@ func (m *allOfMatcher[T]) Matches(actual T) bool {
 func (m *allOfMatcher[T]) Describe() string {
 	parts := make([]string, 0, len(m.matchers))
 	for _, matcher := range m.matchers {
-		if matcher != nil {
-			parts = append(parts, matcher.Describe())
+		if matcher == nil {
+			panic("matcher: AllOf received a nil Matcher")
 		}
+		parts = append(parts, matcher.Describe())
 	}
 	return fmt.Sprintf("(%s)", strings.Join(parts, " and "))
 }
 
 func (m *allOfMatcher[T]) DescribeMismatch(actual T) string {
 	for _, matcher := range m.matchers {
-		if matcher != nil && !matcher.Matches(actual) {
+		if matcher == nil {
+			panic("matcher: AllOf received a nil Matcher")
+		}
+		if !matcher.Matches(actual) {
 			return matcher.DescribeMismatch(actual)
 		}
 	}
